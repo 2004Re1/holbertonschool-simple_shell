@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <sys/wait.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <sys/types.h>
@@ -22,7 +23,7 @@ char **line_div(char *command)
 	arr[i++] = NULL;
 	return (arr);
 }
-int main(char **env)
+int main(int ac, char **av, char **env)
 {
 	char *buff = NULL, *prompt = "$ ";
 	size_t buff_size = 0;
