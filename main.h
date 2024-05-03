@@ -1,18 +1,19 @@
-#ifndef main_h
-#define main_h
+#ifndef SIMPLE_SHELL
+#define SIMPLE_SHELL
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <errno.h>
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <sys/wait.h>
-extern char **environ;
-char *getln(void);
-char **formatln(char *ln);
-char *compose(char *token, char *val);
-int launch_process(char **command);
-void search_exe(char **command);
-char *_getenv(char *name);
-void handler_function(int i);
-#endif
+
+int execute(char *const command[], char **envp);
+int print_env(void);
+char *_getenv(const char *name, char **envp);
+void parse(char command[], char **envp);
+
+#endif /* SIMPLE_SHELL */
