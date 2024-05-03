@@ -1,4 +1,4 @@
-#include "simpleshell.h"
+#include "main.h"
 
 /*char **env, *command;*/
 
