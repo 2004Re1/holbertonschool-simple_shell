@@ -1,125 +1,115 @@
-#include "simpleshell.h"
+#include "main.h"
 
-/*char *fullpath;*/
 
 /**
- * printerror - prints error
- * @command: command inserted
+ * file_exist - Checks if a file exists.
+ * @file: The name of the file to check.
+ * Return: EXIT_SUCCESS if the file exists, EXIT_FAILURE otherwise.
  */
 
-void printerror(char *const command[])
+
+int file_exist(char *file)
 {
-	fprintf(stderr, "./hsh: 1: %s: not found\n", command[0]);
-	free(*command);
-	exit(127);
+	struct stat st;
+
+	if (stat(file, &st) == 0)
+		return (EXIT_SUCCESS);
+
+	return (EXIT_FAILURE);
 }
 
 /**
- * _getenv - get environment variable
- * @name: name of environment variable
- * @envp: pointer to environment variables
- * Return: pointer to environment variable
+ * find_cmd_path - finds full path of a command in PATH environment variable.
+ * @cmd: The command to find
+ * @work_buffer: The buffer to store the full path.
+ * Return: EXIT_SUCCESS if the command is found, EXIT_FAILURE otherwise.
  */
 
-char *_getenv(const char *name, char **envp)
+int find_cmd_path(char *cmd, char *work_buffer)
 {
-	char **env, *separator;
+	char *token;
+	char *var_path, *var_value_path;
+	/* Look if file exists only if command starts with "/" or "./" or "../"*/
+	/* If so, absolute path, no need to check the PATH. */
+	if ((cmd[0] == '/' || strncmp(cmd, "./", 2) == 0 ||
+		strncmp(cmd, "../", 3) == 0) && file_exist(cmd) == EXIT_SUCCESS)
+		return (EXIT_SUCCESS);
 
-	for (env = envp; *env != NULL; env++)
+	var_value_path = _getenv("PATH");
+	if (var_value_path == NULL)  /* If no PATH variable: like if PATH was unset */
+		return (EXIT_FAILURE);
+	if (strlen(var_value_path) == 0)/* if PATH= , defined but empty*/
+		return (EXIT_FAILURE);
+
+	var_path = strdup(var_value_path);
+	if (var_path == NULL)
+		return (EXIT_FAILURE);
+
+	token = strtok(var_path, ":");
+	while (token)
 	{
-		separator = strchr(*env, '=');
-		if (separator != NULL)
+		if (sprintf(work_buffer, "%s/%s", token, cmd) < 0)
 		{
-			if (strncmp(*env, name, separator - *env) == 0)
-			{
-				return (separator + 1);
-			}
+			free(var_path);
+			return (EXIT_FAILURE);
 		}
+		/*test if current PATH path+cmd exists*/
+		if (file_exist(work_buffer) == EXIT_SUCCESS)
+		{
+			free(var_path);
+			return (EXIT_SUCCESS);
+		}
+		token = strtok(NULL, ":");
 	}
-	return (NULL);
+	free(var_path);
+	return (EXIT_FAILURE);
 }
-
 /**
- * pathfinder - finds the correct path for given alias
- * @command: given input to check for path
- * @cmd: argument
- * @envp: pointer to environment variables
- * Return: pointer to the string array or NULL if failed
+ * execute_command - Executes a command.
+ * @argv: The array of arguments for the command.
+ * Return: EXIT_SUCCESS on success, EXIT_FAILURE on failure.
  */
 
-char **pathfinder(char *cmd, char **command, char **envp)
+int execute_command(char **argv)
 {
-	char *current_path, *temp_path;
-	char *path_tok;
-	size_t arglen = strlen(cmd);
+	pid_t child_pid;
+	int status;
+	char *cmd = argv[0], *work_buffer;
 
-	fullpath = NULL;
-
-	if (strchr(cmd, '/') != NULL && access(cmd, F_OK) == 0)
+	work_buffer = malloc(1024);
+	if (work_buffer == NULL)
+		return (shell_error());
+	/* init with received value cmd=argv[0] */
+	if (strcpy(work_buffer, cmd) != work_buffer)
 	{
-		command[0] = cmd;
-		return (command);
+		free(work_buffer);
+		return (shell_error());
 	}
-
-	path_tok = NULL;
-	current_path = _getenv("PATH", envp);
-	temp_path = strdup(current_path);
-	path_tok = strtok(temp_path, ":");
-
-	while (path_tok)
+	if (find_cmd_path(cmd, work_buffer) == EXIT_FAILURE)
 	{
-		fullpath = malloc(arglen + strlen(path_tok) + 2);
-		sprintf(fullpath, "%s/%s", path_tok, cmd);
-		if (access(fullpath, F_OK) == 0)
+		fprintf(stderr, "./hsh: 1: %s: not found\n", cmd);
+		free(work_buffer);
+		return (127);
+	}
+	child_pid = fork();
+	if (child_pid == -1)
+	{
+		free(work_buffer);
+		return (shell_error());
+	}
+	if (child_pid == 0)
+	{
+		if (execve(work_buffer, argv, environ) == -1)
 		{
-			command[0] = fullpath;
-			free(temp_path);
-			return (command);
+			fprintf(stderr, "./hsh: 1: %s: not found\n", cmd);
+			free(work_buffer);
+			exit(127);
 		}
-		path_tok = strtok(NULL, ":");
-		free(fullpath);
+		exit(EXIT_FAILURE);
 	}
-	free(temp_path);
-	return (NULL);
-}
-
-/**
- * execute - function to execute commands
- * @command: input froom user
- * @envp: enviroment path
- * Return: -1 if failed and 0 if success
- */
-
-int execute(char *const command[], char **envp)
-{
-	pid_t id;
-	int status, i;
-	char **temp = pathfinder(command[0], (char **) command, envp);
-
-	if (temp != NULL)
-	{
-		id = fork();
-		if (id < 0)
-		{
-			perror("fork failed");
-			return (-1);
-		} else if (id == 0)
-		{
-			if (_getenv("PATH", envp) == NULL && access(command[0], F_OK) != 0)
-				printerror(command);
-			execve(temp[0], command, envp);
-			for (i = 0; command[i] != NULL; i++)
-				free(command[i]);
-			exit(EXIT_FAILURE);
-		}
-		wait(&status);
-		free(fullpath);
-	} else
-		printerror(command);
-	if (errno == -1)
-	{
-		free(*command);
-		exit(2);
-	}
-	return (0);
+	wait(&status);
+	free(work_buffer);
+	if (WIFEXITED(status))
+		status = WEXITSTATUS(status); /* status of child */
+	return (status);
 }
