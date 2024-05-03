@@ -1,19 +1,31 @@
 #ifndef SIMPLE_SHELL
 #define SIMPLE_SHELL
 
-#include <stdio.h>
+/* LIBRARIES */
+
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include <stdlib.h>
-#include <fcntl.h>
-#include <errno.h>
+#include <stdint.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/stat.h>
 
-int execute(char *const command[], char **envp);
-int print_env(void);
-char *_getenv(const char *name, char **envp);
-void parse(char command[], char **envp);
 
-#endif /* SIMPLE_SHELL */
+/* GLOBAL VARIABLE */
+
+extern char **environ;
+
+
+/* PROTOTYPES */
+
+int find_cmd_path(char *cmd, char *work_buffer);
+int file_exist(char *file);
+int execute_command(char *argv[]);
+char **fill_args(char *input_buffer);
+void print_env(void);
+int shell_error(void);
+char *_getenv(const char *name);
+
+#endif
