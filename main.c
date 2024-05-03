@@ -1,90 +1,76 @@
-#include <stdio.h>
-#include <sys/wait.h>
-#include <stdlib.h>
-#include <stddef.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <string.h>
-int _execute(char *arguments, struct stat *statbuf, char**envp);
-int check_file_status(char* pathname, struct stat *statbuf);
-char **line_div(char *command)
+#include "main.h"
+/**
+ * main - execution
+ * Return: 0
+ */
+int main(void)
 {
-	char **arr;
-	char *token;
-	int i = 0;
-	token = strtok(command, " \n\t");
-	while (token != NULL && i < 63)
+
+	char *ln, **command;
+	int st = 1;
+
+	signal(SIGINT, handler_function);
+	do
+
 	{
-		arr[i++] = token;
-		token = strtok(NULL, " \n\t");
-	}
-	arr[i++] = NULL;
-	return (arr);
-}
-int main(int ac, char **av, char **env)
-{
-	char *buff = NULL, *prompt = "$ ";
-	size_t buff_size = 0;
-	ssize_t bytes;
-	pid_t wpid;
-	int wstatus;
-	int from_pipe = 0;
-	struct stat statbuf;
-	while(1 && !from_pipe)
-	{
-		if(isatty(STDIN_FILENO == 0))
-			from_pipe = 1;
-		printf("%s",prompt);
-		bytes = getline(&buff, &buff_size, stdin);
-		if(bytes == -1)
+		if (isatty(STDIN_FILENO))
+			printf("$ ");
+
+		else
 		{
-			perror("Error (getline)");
-			free(buff);
-			exit(EXIT_FAILURE);
+			ln = getln();
+			command = formatln(ln);
+			search_exe(command);
+			launch_process(command);
+			free(ln);
+			free(command);
+			return (0);
 		}
-		if (buff[bytes-1] == '\n')
-			buff[bytes-1] = '\0';
-		wpid = fork();
-		if(wpid == -1)
+
+		ln = getln();
+		command = formatln(ln);
+		if (*command == NULL)
 		{
-			perror("Error (fork)");
-			exit(EXIT_FAILURE);
+			free(ln);
+			free(command);
+			continue;
 		}
-		if(wpid == 0)
-			_execute(buff, &statbuf, env);
-		if(wpid = waitpid(wpid, &wstatus, 0) == -1)
-		{
-			perror("Error (wait)");
-			exit(EXIT_FAILURE);
-		}
-	}
-	free(buff);
+		search_exe(command);
+		st = launch_process(command);
+		free(ln);
+		free(command);
+
+	} while (st);
+
 	return (0);
 }
-int _execute(char *arguments, struct stat *statbuf, char **envp)
+
+/**
+ * launch_process - execute command
+ * @command: command
+ * Return: 1
+ */
+int launch_process(char **command)
 {
-	int argc;
-	char **argv;
-	char *exe;
-	argv = line_div(arguments);
-	if (!check_file_status(argv[0], statbuf))
-	{
-		perror("Error (file status)");
-		exit(EXIT_FAILURE);
-	}
-	
-	execve(argv[0], argv, envp);
-	perror("Error (execve)");
-	exit(EXIT_FAILURE);
+	pid_t pid;
+
+	pid = fork();
+	if (pid == 0 && execve(command[0], command, environ) == -1)
+		perror("./shell");
+
+	else
+		wait(&pid);
+
+	return (1);
 }
-int check_file_status(char *pathname, struct stat *statbuf)
+/**
+ * handler_function - handle signit
+ * @i: integer
+ */
+void handler_function(int i)
 {
-	int stat_return;
-	stat_return = stat(pathname, statbuf);
-	
-	if(stat_return == 0)
-		return (1);
-	return (0);
+	if (i)
+	{
+		write(STDOUT_FILENO, "\n$ ", strlen("\n$ "));
+	}
 }
