@@ -54,7 +54,7 @@ int main(int ac, char **av, char **env)
 		}
 		if(wpid == 0)
 			_execute(buff, &statbuf, env);
-		if(waitpid(wpid, &wstatus, 0) == -1)
+		if(wpid = waitpid(wpid, &wstatus, 0) == -1)
 		{
 			perror("Error (wait)");
 			exit(EXIT_FAILURE);
