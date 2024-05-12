@@ -1,59 +1,36 @@
 #include "main.h"
-/**
- * _err - checks and handles errors
- * @args: arguments to check
- * Return: void
- */
-
-void _err(char *args[])
-{
-	fprintf(stderr, "%s: command not found\n", args[0]);
-	perror("");
-	free(args[0]);
-	exit(98);
-}
-
 
 /**
- * exec - executes the input received
- * @args: arguments
- * @input: input
- * Return: void
- */
-
-void exec(char **args, char *input)
+ * execute - executes a query
+ * @matrix: argv
+ * @path: path of the query
+ * @status: status
+ * @temp: temp
+*/
+void execute(char **matrix, char *path, int *status, char *temp)
 {
+	pid_t pid = fork();
 
-	int status;
-	pid_t childPid = 0;
-
-	if (access(args[0], X_OK) != 0)
-		_err(args);
-
-	childPid = fork();
-
-	if (childPid == -1)
+	if (pid == -1)
+		free(temp), perror("Error");
+	else if (pid == 0)
 	{
-		perror("fork\n");
-		free(input);
-		free(args[0]);
-		exit(EXIT_FAILURE);
-	}
-	else if (childPid == 0)
-	{
-		execve(args[0], args, environ);
-		perror(args[0]);
-		free(args[0]);
-		exit(EXIT_FAILURE);
+		if (execve(path, matrix, environ) == -1)
+		{
+			perror("Error execve");
+			matrix_freear(matrix);
+			free(temp);
+			free(path);
+			exit(1);
+		}
 	}
 	else
 	{
-		wait(&status);
-		if (WIFEXITED(status))
-		{
-			free(args[0]);
-			free(input);
-			exit(WEXITSTATUS(status));
-		}
+		waitpid(pid, status, 0);
+		if (WIFEXITED(*status))
+			*status = WEXITSTATUS(*status);
+		free(temp);
 	}
+	free(path);
+	matrix_freear(matrix);
 }
