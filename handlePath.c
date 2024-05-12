@@ -1,55 +1,35 @@
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <unistd.h>
 #include "main.h"
 
 /**
- * handle_path - Finds the path of the command to execute
- * @input: User input
- * Return: The full path of the command if found, NULL otherwise
- */
-
-char *handle_path(char *input)
+ * get_path - gets path of a query
+ * @matrix: argv
+ * @query: query
+ * Return: path of the query
+*/
+char *get_path(char **matrix, char *query)
 {
-	int i = 0;
-	char *cache, *token, *result;
+	struct stat st;
+	char *path = getenv("PATH"), *copyenv = NULL, *token = NULL, *f_path = NULL;
 
-	if (strchr(input, '/') != NULL)
-		return (strdup(input));
-
-	while (environ[i] != NULL)
+	if (path == NULL || strlen(path) == 0)
 	{
-		cache = strdup(environ[i]);
-		token = strtok(cache, "=");
-		if (strcmp(token, "PATH") == 0)
-		{
-			token = strtok(NULL, "=");
-			token = strtok(token, ":");
-			while (token != NULL)
-			{
-				result = malloc(strlen(token) + strlen(input) + 2);
-				if (result == NULL)
-				{
-					perror("Malloc is NULL");
-					free(cache);
-					return (NULL);
-				}
-				sprintf(result, "%s/%s", token, input);
-				if (access(result, X_OK) == 0)
-				{
-					free(cache);
-					return (result);
-				}
-
-				free(result);
-				token = strtok(NULL, ":");
-			}
-		}
-		free(cache);
-		i++;
+		fprintf(stderr, "./hsh: 1: %s: not found\n", matrix[0]);
+		free(query), matrix_freear(matrix);
+		exit(127);
 	}
-
-	free(input);
-	return (NULL);
+	copyenv = strdup(path), token = strtok(copyenv, ":");
+	f_path = malloc(sizeof(char) * SIZE);
+	while (token != NULL)
+	{
+		snprintf(f_path, SIZE, "%s/%s", token, matrix[0]);
+		if (stat(f_path, &st) == 0)
+		{
+			free(copyenv);
+			return (f_path);
+		}
+		token = strtok(NULL, ":");
+	}
+	fprintf(stderr, "./hsh: 1: %s: not found\n", matrix[0]);
+	free(query), free(copyenv), free(f_path), matrix_freear(matrix);
+	exit(127);
 }
