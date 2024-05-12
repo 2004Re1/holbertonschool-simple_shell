@@ -120,5 +120,5 @@ root@id:/holbertonschool-simple_shell#
 ## Authors :writing_hand:
 
 This README file, along with the entirety of this project, was made by : 
-- **[Arwen Dumont](https://github.com/Arweenn)**
-- **[Yassine Daoui](https://github.com/Fiegsy)**
+- **[Akhundov Ravan](https://github.com/2004Re1)**
+- **[Gulana Mehrelizade](https://github.com/Mehralizada)**
