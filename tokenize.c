@@ -1,51 +1,27 @@
 #include "main.h"
 
 /**
- * tokenize - function that splits a string into multiple ones
- * @input: users input
- * @args: arguments
- * Return: void
+ * tokenize - works with strtok
+ * @query: string to tokenize
+ * Return: matrix (arr of tokenized strings)
  */
-
-void tokenize(char *input, char *args[])
+char **tokenize(char *query)
 {
-	char *token;
-	unsigned int i = 0;
+	char *token, **tokens;
+	int i = 0;
 
-	token = strtok(input, " ");
-	while (token != NULL)
+	tokens = malloc(sizeof(char *) * SIZE);
+	if (!tokens)
 	{
-		args[i] = token;
-		i++;
-		token = strtok(NULL, " ");
+		perror("Malloc Error: ");
+		exit(98);
 	}
-	args[i] = NULL;
-
-	if (args[0] == NULL)
-		exit(0);
-
-	if (strcmp(input, "env") == 0)
+	token = strtok(query, " \t\n");
+	while (token)
 	{
-		printEnv();
-		return;
+		tokens[i++] = strdup(token);
+		token = strtok(NULL, " \t\n");
 	}
-
-	if (strcmp(input, "exit") == 0 && args[1] == NULL)
-	{
-		free(args[0]);
-		exit(0);
-	}
-
-	token = strdup(args[0]);
-	args[0] = handle_path(args[0]);
-	if (args[0] != NULL)
-	{
-		free(token);
-		exec(args, input);
-		free(args[0]);
-		return;
-	}
-	fprintf(stderr, "./hsh: 1: %s: not found\n", token);
-	free(token);
-	exit(127);
+	tokens[i] = NULL;
+	return (tokens);
 }
