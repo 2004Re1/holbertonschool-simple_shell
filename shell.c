@@ -1,71 +1,46 @@
-#define _GNU_SOURCE
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-
+#include "main.h"
 /**
- * spacesCheck - check if str contain only space
- * @str: string to check
- * Return: 0 on success or 1 on failure
- */
-int spacesCheck(const char *str)
-{
-    while (*str)
-    {
-        if (*str != ' ')
-            return (0);
-        str++;
-    }
-    return (1);
-}
-
-/**
- * main - main function for the shell
+ * main - entry point to shell
  * Return: 0 on success
  */
 int main(void)
 {
-    char *input = NULL;
-    size_t inputSize = 0;
-    ssize_t inputRead;
-    int i; 
+	char *query, *temp = NULL;
+	int r, status = 0, tty;
+	size_t size;
 
-    while (1)
-    {
-        if (isatty(STDIN_FILENO))
-        {
-            printf("$ ");
-            fflush(stdout);
-        }
+	while (true)
+	{
+		query = NULL;
+		tty = isatty(STDIN_FILENO);
+		if (tty)
+			printf("#cisfun$ ");
+		fflush(stdout);
+		r = getline(&query, &size, stdin);
+		if (r == -1)
+		{
+			if (tty == 1)
+				printf("\n");
+			free(query);
+			break;
+		}
+		query[r - 1] = 0, temp = query;
+		if (query == NULL)
+		{
+			free(temp);
+			break;
+		}
+		while (query[0] == 32 || query[0] == '\t')
+			query++;
 
-        inputRead = getline(&input, &inputSize, stdin);
-        if (inputRead == EOF)
-        {
-            free(input);
-            exit(0);
-        }
-
-        if (inputRead > 0 && input[inputRead - 1] == '\n')
-            input[inputRead - 1] = '\0';
-
-        if (!spacesCheck(input))
-        {
-            for (i = 0; i < 3; i++) 
-            {
-                printf("Correct output - case: Execute /bin/ls\n");
-                system("/bin/ls");
-            }
-
-            printf("\nCorrect output - case: Execute /bin/ls 4 times (surrounded by spaces)\n");
-            for (i = 0; i < 4; i++)
-            {
-                printf("Full path of ' /bin/ls ': /bin/ls\n");
-                system(" /bin/ls ");
-            }
-        }
-    }
-    free(input);
-    return (0);
+		if (query[0] == '\n' || query[0] == 0)
+		{
+			free(temp);
+			continue;
+		}
+		if (exit_handler(query, &status))
+			continue;
+		query_formatter(query, temp, &status);
+	}
+	return (status);
 }
