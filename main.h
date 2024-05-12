@@ -1,20 +1,28 @@
-#ifndef MAIN_H
-#define MAIN_H
+#ifndef SHELL_H
+#define SHELL_H
 
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stddef.h>
 #include <string.h>
 #include <unistd.h>
-#include <sched.h>
-#include <sys/types.h>
+#include <stdbool.h>
+#include <sys/stat.h>
 #include <sys/wait.h>
+#include <sys/types.h>
+
+#define SIZE 100
 
 extern char **environ;
 
-void exec(char **args, char *input);
-void tokenize(char *input, char *args[]);
-void handlePath(const char *path, int length);
-void printEnv(void);
-char *handle_path(char *input);
+int main(void);
+int exit_handler(char *command, int *status);
+void query_formatter(char *command, char *temp, int *status);
+void execute(char **arr, char *path, int *status, char *temp);
+char **tokenize(char *input);
+void matrix_freear(char **arr);
+void print_env(void);
+char *get_path(char **arr, char *command);
 
-#endif /*MAIN_H*/
+#endif /* SHELL_H */
