@@ -1,46 +1,31 @@
 #include "main.h"
 /**
- * main - entry point to shell
- * Return: 0 on success
+ * main - main func
+ *
+ * Return: int
  */
 int main(void)
 {
-	char *query, *temp = NULL;
-	int r, status = 0, tty;
-	size_t size;
-
-	while (true)
+	char *command;
+	int status;
+	
+	while (1)
 	{
-		query = NULL;
-		tty = isatty(STDIN_FILENO);
-		if (tty)
-			printf("#cisfun$ ");
-		fflush(stdout);
-		r = getline(&query, &size, stdin);
-		if (r == -1)
-		{
-			if (tty == 1)
-				printf("\n");
-			free(query);
+		if (isatty(STDIN_FILENO))
+			printf("$ ");
+		command = _getline();
+		if (command == NULL)
 			break;
-		}
-		query[r - 1] = 0, temp = query;
-		if (query == NULL)
+		if (strcmp(command, "exit") == 0)
 		{
-			free(temp);
-			break;
+			free(command);
+			exit(0);
 		}
-		while (query[0] == 32 || query[0] == '\t')
-			query++;
-
-		if (query[0] == '\n' || query[0] == 0)
+		status = execute(command);
+		if (status == 2)
 		{
-			free(temp);
-			continue;
+			exit(2);
 		}
-		if (exit_handler(query, &status))
-			continue;
-		query_formatter(query, temp, &status);
 	}
 	return (status);
 }
