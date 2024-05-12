@@ -1,27 +1,23 @@
 #include "main.h"
-
 /**
- * tokenize - works with strtok
- * @query: string to tokenize
- * Return: matrix (arr of tokenized strings)
+ * line_div - splits given string into parts
+ *
+ * @command: The command string to parse.
+ * @arr: An array of strings to store the parsed arguments.
+ *
+ * Return: modified char array.
  */
-char **tokenize(char *query)
+char **line_div(char *command,char **arr)
 {
-	char *token, **tokens;
+	char *token;
 	int i = 0;
 
-	tokens = malloc(sizeof(char *) * SIZE);
-	if (!tokens)
+	token = strtok(command, " \n\t");
+	while (token != NULL && i < 63)
 	{
-		perror("Malloc Error: ");
-		exit(98);
+		arr[i++] = token;
+		token = strtok(NULL, " \n\t");
 	}
-	token = strtok(query, " \t\n");
-	while (token)
-	{
-		tokens[i++] = strdup(token);
-		token = strtok(NULL, " \t\n");
-	}
-	tokens[i] = NULL;
-	return (tokens);
+	arr[i++] = NULL;
+	return (arr);
 }
