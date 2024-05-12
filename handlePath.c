@@ -1,3 +1,7 @@
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <unistd.h>
 #include "main.h"
 
 /**
@@ -28,6 +32,7 @@ char *handle_path(char *input)
 				if (result == NULL)
 				{
 					perror("Malloc is NULL");
+					free(cache);
 					return (NULL);
 				}
 				sprintf(result, "%s/%s", token, input);
